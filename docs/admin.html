@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>KarmanLang Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/kl.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./"><b>KarmanLang</b><span>· Admin</span></a>
+  <div class="who" id="who" hidden><span id="who-email"></span><button class="btn ghost" id="btn-signout">Sign out</button></div>
+</header>
+
+<main class="main">
+  <section class="card signin" id="signin" hidden aria-labelledby="signin-h">
+    <h1 id="signin-h">Owner sign-in</h1>
+    <div id="provider-btns" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="divider" id="or" hidden>or</div>
+    <form id="email-form" novalidate style="display:flex;flex-direction:column;gap:10px">
+      <label class="f" for="email">Email address<input type="email" id="email" autocomplete="email" required></label>
+      <button class="btn primary block" id="email-btn" type="submit">Email me a sign-in link</button>
+    </form>
+    <p class="status" id="signin-status" role="status"></p>
+  </section>
+
+  <section class="card" id="denied" hidden><h2>Not an owner account</h2><p class="muted" id="denied-msg"></p></section>
+
+  <div class="console" id="console" hidden>
+    <aside class="card" style="padding:14px">
+      <div class="row"><span class="eyebrow">Agents</span><span class="spacer"></span><button class="btn" id="btn-new-agent">+ New</button></div>
+      <nav class="agentlist" id="agentlist" aria-label="Agents"></nav>
+      <hr style="border:0;border-top:1px solid var(--line);width:100%">
+      <button class="btn" id="btn-connect">Connect Claude / ChatGPT / CLI</button>
+    </aside>
+
+    <section class="card" id="pane" aria-live="polite">
+      <div id="empty"><h2>Deploy your first agent</h2><p class="muted">Use <b>+ New</b>, or connect KarmanLang to Claude or ChatGPT and say "deploy this agent".</p></div>
+
+      <!-- connect -->
+      <div id="connect" hidden style="display:flex;flex-direction:column;gap:14px">
+        <h2>Connect KarmanLang</h2>
+        <p class="muted" style="margin:0">A deploy token lets Claude, ChatGPT, or the command line create and manage agents in this account. Treat it like a password.</p>
+        <div class="row"><input type="text" id="tok-name" placeholder="Token name, e.g. Claude on my laptop" style="max-width:340px"><button class="btn primary" id="btn-tok">Create deploy token</button></div>
+        <div class="secret" id="tok-secret" hidden>
+          <b>Copy these now. They won't be shown again.</b>
+          <div><span class="eyebrow">Connector URL (Claude or ChatGPT → add custom connector)</span><div class="linkbox"><span id="tok-url"></span><button class="btn" data-copy="#tok-url">Copy</button></div></div>
+          <div><span class="eyebrow">Command line</span><pre class="cmd" id="tok-cli"></pre></div>
+        </div>
+        <div class="tbl-wrap"><table id="tok-table"></table></div>
+        <h3>Using it</h3>
+        <ul class="small" style="margin:0;padding-left:18px">
+          <li><b>Claude:</b> Settings → Connectors → Add custom connector → paste the connector URL. Then in any chat or project: "Deploy this agent to KarmanLang and approve ana@school.org."</li>
+          <li><b>ChatGPT:</b> Settings → Apps &amp; Connectors → add a custom connector (developer mode) with the same URL.</li>
+          <li><b>Command line:</b> <code class="inline">karman deploy nqry --instructions prompt.md</code>, <code class="inline">karman invite nqry ana@school.org</code>, <code class="inline">karman usage nqry</code>.</li>
+        </ul>
+      </div>
+
+      <!-- agent -->
+      <div id="agent" hidden style="display:flex;flex-direction:column;gap:14px">
+        <div class="row"><h2 id="a-name"></h2><span class="pill" id="a-status"></span><span class="spacer"></span><span class="small muted" id="a-version"></span></div>
+        <div class="tabs" role="tablist" id="tabs">
+          <button role="tab" data-t="overview" aria-selected="true">Overview</button>
+          <button role="tab" data-t="people">People</button>
+          <button role="tab" data-t="settings">Settings</button>
+          <button role="tab" data-t="key">Model &amp; billing</button>
+          <button role="tab" data-t="usage">Usage</button>
+          <button role="tab" data-t="convos">Conversations</button>
+        </div>
+
+        <div data-panel="overview" style="display:flex;flex-direction:column;gap:12px">
+          <div><span class="eyebrow">Link for approved people</span><div class="linkbox"><span id="a-url"></span><button class="btn" data-copy="#a-url">Copy</button><a class="btn" id="a-open" target="_blank" rel="noopener">Open</a></div></div>
+          <div><span class="eyebrow">This admin page</span><div class="linkbox"><span id="a-admin"></span><button class="btn" data-copy="#a-admin">Copy</button></div></div>
+          <div class="stats" id="a-stats"></div>
+        </div>
+
+        <div data-panel="people" hidden style="display:flex;flex-direction:column;gap:12px">
+          <label class="f" for="inv-emails">Approve people<span class="hint">One email per line or comma-separated. Each gets an email saying they're approved and how to sign in.</span><textarea id="inv-emails" rows="3" placeholder="ana@school.org&#10;ben@school.org"></textarea></label>
+          <div class="row"><select id="inv-role" style="max-width:180px"><option value="user">Can use the agent</option><option value="admin">Can also see usage</option></select><button class="btn primary" id="btn-invite">Approve &amp; email</button><span class="status" id="inv-status"></span></div>
+          <div class="tbl-wrap"><table id="people"></table></div>
+        </div>
+
+        <form data-panel="settings" hidden id="settings" style="display:flex;flex-direction:column;gap:12px" novalidate>
+          <div class="grid2">
+            <label class="f" for="s-name">Name<input type="text" id="s-name" maxlength="80"></label>
+            <label class="f" for="s-model">Model<input type="text" id="s-model" placeholder="claude-sonnet-5-5"></label>
+          </div>
+          <label class="f" for="s-description">Description<span class="hint">Shown on the sign-in page.</span><input type="text" id="s-description" maxlength="400"></label>
+          <label class="f" for="s-notice">Notice banner<span class="hint">Shown on every page, e.g. "Educators only. Not for student use."</span><input type="text" id="s-notice" maxlength="600"></label>
+          <label class="f" for="s-greeting">Greeting<input type="text" id="s-greeting" maxlength="1000"></label>
+          <label class="f" for="s-instructions">Instructions (system prompt)<textarea id="s-instructions" rows="12"></textarea></label>
+          <div class="grid2">
+            <label class="f" for="s-access">Who can sign in<select id="s-access"><option value="invite_only">Only approved emails</option><option value="domain">Anyone at a domain</option></select></label>
+            <label class="f" for="s-domain">Domain<span class="hint">For "anyone at a domain", e.g. myschool.org</span><input type="text" id="s-domain"></label>
+            <label class="f" for="s-daily">Replies per person per day<input type="number" id="s-daily" min="1" max="10000"></label>
+            <label class="f" for="s-budget">Monthly token budget<span class="hint">Blank for none.</span><input type="number" id="s-budget" min="1"></label>
+            <label class="f" for="s-status">Status<select id="s-status"><option value="active">Active</option><option value="paused">Paused</option></select></label>
+          </div>
+          <div class="row"><button class="btn primary" type="submit">Save new version</button><span class="status" id="s-msg"></span></div>
+        </form>
+
+        <div data-panel="key" hidden style="display:flex;flex-direction:column;gap:12px">
+          <p style="margin:0" id="k-mode"></p>
+          <div class="card" style="background:var(--bg)">
+            <h3>Use this agent's own Anthropic key</h3>
+            <p class="small muted" style="margin:0">Stored encrypted in the platform vault and never shown again. Usage then bills to that key's account, so you can track or cap it there.</p>
+            <div class="row"><input type="password" id="k-key" placeholder="sk-ant-…" autocomplete="off" style="max-width:380px"><button class="btn primary" id="btn-key">Save key</button></div>
+            <div class="row"><button class="btn danger" id="btn-key-clear">Remove key and use the platform key</button><span class="status" id="k-msg"></span></div>
+          </div>
+        </div>
+
+        <div data-panel="usage" hidden style="display:flex;flex-direction:column;gap:12px">
+          <div class="stats" id="u-stats"></div>
+          <p class="small muted" id="u-note" style="margin:0"></p>
+          <div class="tbl-wrap"><table id="u-table"></table></div>
+        </div>
+
+        <div data-panel="convos" hidden style="display:flex;flex-direction:column;gap:12px">
+          <div class="tbl-wrap"><table id="c-table"></table></div>
+          <div class="transcript" id="c-transcript"></div>
+        </div>
+      </div>
+
+      <!-- new agent -->
+      <form id="newagent" hidden style="display:flex;flex-direction:column;gap:12px" novalidate>
+        <h2>New agent</h2>
+        <div class="grid2">
+          <label class="f" for="n-name">Name<input type="text" id="n-name" maxlength="80" required></label>
+          <label class="f" for="n-slug">Address<span class="hint">Letters, numbers, dashes. Defaults from the name.</span><input type="text" id="n-slug" maxlength="40"></label>
+        </div>
+        <label class="f" for="n-instructions">Instructions (system prompt)<textarea id="n-instructions" rows="10" required></textarea></label>
+        <label class="f" for="n-notice">Notice banner (optional)<input type="text" id="n-notice"></label>
+        <label class="f" for="n-invite">Approve right away (optional)<textarea id="n-invite" rows="2" placeholder="ana@school.org"></textarea></label>
+        <div class="row"><button class="btn primary" type="submit">Deploy</button><span class="status" id="n-msg"></span></div>
+      </form>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>
