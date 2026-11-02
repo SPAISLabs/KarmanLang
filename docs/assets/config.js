@@ -4,6 +4,6 @@ window.KL = {
   supabaseUrl: "https://nouuodihcgddrdyfkoca.supabase.co",
   publishableKey: "sb_publishable__a7e4Oa-GPwnSQzPIeihOw_kd-UD25v",
   api: "https://nouuodihcgddrdyfkoca.supabase.co/functions/v1/karman",
-  base: "/KarmanLang/",          // GitHub Pages project path; "/" on a custom domain
+  base: "/",                     // site root on the private Pages domain
   providers: ["email"],          // add "google", "azure" once enabled in Supabase Auth
 };
