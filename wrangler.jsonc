@@ -3,7 +3,7 @@
   // Secrets (Cloudflare dashboard → this Worker → Settings → Variables and Secrets):
   //   ANTHROPIC_API_KEY   the model key
   //   ADMIN_PASSWORD      the password for /admin
-  "name": "karmanlang",
+  "name": "karmanllm",
   "main": "src/worker.js",
   "compatibility_date": "2025-09-01",
   "assets": {

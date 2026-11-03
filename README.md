@@ -29,7 +29,7 @@ karman CLI ────────┴──────────────
 3. **Worker → Settings → Variables and Secrets**, add two secrets:
    - `ANTHROPIC_API_KEY`: your Anthropic key
    - `ADMIN_PASSWORD`: the password for `/admin`
-4. Open `https://karmanlang.<your-subdomain>.workers.dev/admin`, sign in, open **Connect**, create a connector token, and add the connector URL in Claude (Settings → Connectors → Add custom connector).
+4. Open `https://karmanllm.seantucker.workers.dev/admin`, sign in, open **Connect**, create a connector token, and add the connector URL in Claude (Settings → Connectors → Add custom connector).
 
 The database tables are created automatically on first use.
 
@@ -41,7 +41,7 @@ The database tables are created automatically on first use.
 
 ```bash
 npm i -g ./cli            # or: node cli/karman.mjs …
-export KARMAN_ENDPOINT=https://karmanlang.<your-subdomain>.workers.dev/mcp
+export KARMAN_ENDPOINT=https://karmanllm.seantucker.workers.dev/mcp
 export KARMAN_TOKEN=kl_…  # admin page → Connect
 eval "$(karman completion bash)"
 
