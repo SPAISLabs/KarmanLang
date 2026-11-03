@@ -7,46 +7,43 @@
 <title>KarmanLang</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="assets/kl.css">
+<link rel="stylesheet" href="/assets/kl.css">
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" id="brand" href="./"><b>KarmanLang</b><span id="brand-sub"></span></a>
-  <div class="who" id="who" hidden><span id="who-email"></span><a id="who-admin" href="admin" hidden>Admin</a><button class="btn ghost" id="btn-signout">Sign out</button></div>
+  <a class="brand" href="/"><b>KarmanLang</b><span id="brand-sub"></span></a>
+  <div class="who" id="who" hidden><a id="who-admin" href="/admin" hidden>Admin</a><button class="btn ghost" id="btn-signout">Sign out</button></div>
 </header>
 
-<main class="main narrow" id="main">
+<main class="main narrow">
   <div class="notice" id="notice" role="note" hidden></div>
 
-  <!-- sign in -->
   <section class="card signin" id="signin" hidden aria-labelledby="signin-h">
     <div>
-      <h1 id="signin-h">Sign in</h1>
-      <p class="muted" id="signin-sub" style="margin:6px 0 0">Use the email address you were approved with.</p>
+      <h1 id="signin-h">Enter your access code</h1>
+      <p class="muted" id="signin-sub" style="margin:6px 0 0"></p>
     </div>
-    <div id="provider-btns" style="display:flex;flex-direction:column;gap:8px"></div>
-    <div class="divider" id="or" hidden>or</div>
-    <form id="email-form" novalidate style="display:flex;flex-direction:column;gap:10px">
-      <label class="f" for="email">Email address<input type="email" id="email" autocomplete="email" required placeholder="you@school.org"></label>
-      <button class="btn primary block" id="email-btn" type="submit">Email me a sign-in link</button>
+    <form id="code-form" novalidate style="display:flex;flex-direction:column;gap:10px">
+      <label class="f" for="code">Access code
+        <input type="text" id="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required
+          placeholder="XXXX-XXXX-XXXX" style="font-family:var(--f-mono);letter-spacing:.08em;text-transform:uppercase">
+      </label>
+      <button class="btn primary block" id="code-btn" type="submit">Continue</button>
     </form>
     <p class="status" id="signin-status" role="status"></p>
   </section>
 
-  <!-- agent list (no slug) -->
   <section class="card" id="home" hidden>
-    <h1>Your agents</h1>
-    <div id="home-list"></div>
+    <h1>KarmanLang</h1>
+    <p class="muted" style="margin:0">Open the agent link you were given, then enter your access code.</p>
+    <p style="margin:0"><a href="/admin">Owner sign-in</a></p>
   </section>
 
-  <!-- not allowed -->
-  <section class="card" id="denied" hidden>
-    <h2>You don't have access yet</h2>
-    <p class="muted" id="denied-msg"></p>
-    <div class="row"><button class="btn" id="btn-switch">Use a different account</button></div>
+  <section class="card" id="missing" hidden>
+    <h2>No agent here</h2>
+    <p class="muted" id="missing-msg" style="margin:0"></p>
   </section>
 
-  <!-- chat -->
   <section class="chat" id="chat" hidden aria-labelledby="agent-name">
     <div class="chat-head">
       <div style="min-width:0"><h2 id="agent-name"></h2><div class="small muted" id="agent-desc"></div></div>
@@ -63,9 +60,7 @@
   </section>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="assets/config.js"></script>
-<script src="assets/core.js"></script>
-<script src="assets/app.js"></script>
+<script src="/assets/core.js"></script>
+<script src="/assets/app.js"></script>
 </body>
 </html>
