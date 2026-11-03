@@ -216,7 +216,10 @@ export async function callClaude(env, model, system, messages) {
     if (r.status === 401) throw new HttpError(502, "bad_key", "The model key was rejected. Check ANTHROPIC_API_KEY in Cloudflare.");
     if (r.status === 404) throw new HttpError(502, "bad_model", "This agent's model isn't available. Pick another on the admin page.");
     if (r.status === 429 || r.status === 529) throw new HttpError(503, "busy", "The model is busy. Try again in a minute.");
-    throw new HttpError(502, "upstream", "The model couldn't be reached. Try again.");
+    const why = String(j?.error?.message || "").slice(0, 200);
+    if (/credit balance/i.test(why)) throw new HttpError(502, "no_credit", "The Anthropic account is out of credit. The owner needs to add credit at console.anthropic.com.");
+    if (r.status === 403) throw new HttpError(502, "forbidden", `The model key isn't allowed to do this (Anthropic: ${why || "permission denied"}).`);
+    throw new HttpError(502, "upstream", `The model couldn't be reached (Anthropic ${r.status}${why ? ": " + why : ""}). Try again.`);
   }
   const text = (j.content ?? []).filter((b) => b.type === "text").map((b) => b.text).join("").trim();
   if (!text) throw new HttpError(502, "empty", "The model returned an empty reply. Try again.");
