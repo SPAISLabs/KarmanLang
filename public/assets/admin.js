@@ -2,7 +2,7 @@
 (function () {
   const { api, esc, copy, $, when } = window.KL;
   let agents = [], current = null, origin = location.origin;
-  const views = ["empty", "connect", "agent", "newagent"];
+  const views = ["empty", "overview", "connect", "agent", "newagent"];
   const view = (id) => views.forEach((v) => ($("#" + v).hidden = v !== id));
   const fail = (e) => alert(e.message || String(e));
 
@@ -29,6 +29,7 @@
     $("#agentlist").innerHTML = agents.map((a) =>
       `<button data-slug="${esc(a.slug)}" aria-current="${a.slug === select}"><b>${esc(a.name)}</b><small>/${esc(a.slug)} · ${a.codes} code${a.codes === 1 ? "" : "s"}${a.status === "paused" ? " · paused" : ""}</small></button>`).join("");
     if (select && agents.some((a) => a.slug === select)) return openAgent(select);
+    if (agents.length) return showOverview();
     view("empty");
   }
   $("#agentlist").addEventListener("click", (e) => { const b = e.target.closest("button[data-slug]"); if (b) openAgent(b.dataset.slug); });
@@ -44,6 +45,31 @@
     $("#c-new").hidden = true;
     view("agent"); tab("share");
   }
+
+  // ---------- dashboard ----------
+  const ago = (ms) => { if (!ms) return "never"; const m = Math.round((Date.now() - ms) / 6e4);
+    return m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
+  async function showOverview() {
+    current = null; history.replaceState(null, "", "/admin"); view("overview");
+    document.querySelectorAll("#agentlist button").forEach((b) => b.setAttribute("aria-current", "false"));
+    const o = await api("overview");
+    $("#ov-time").textContent = "Updated " + when(o.generated_at);
+    const t = o.totals;
+    $("#ov-stats").innerHTML = [[t.agents, `agents (${t.active} active)`], [t.codes_live, "live codes"], [t.replies_7d, "replies, 7 days"],
+      [t.replies_30d, "replies, 30 days"], [t.tokens_30d.toLocaleString(), "tokens, 30 days"]]
+      .map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join("");
+    $("#ov-table").innerHTML = `<thead><tr><th>Agent</th><th>Status</th><th>Ver.</th><th>Codes</th><th>People 7d</th><th>Replies 7d / 30d</th><th>Last activity</th></tr></thead><tbody>` +
+      o.agents.map((a) => `<tr><td><a href="#" data-open="${esc(a.slug)}"><b>${esc(a.name)}</b></a><br><span class="small muted">/${esc(a.slug)}</span></td>
+        <td><span class="pill ${a.status}">${a.status}</span></td><td>v${a.version}</td>
+        <td>${a.codes_live}${a.codes_unused ? ` <span class="small muted">(${a.codes_unused} unused)</span>` : ""}${a.codes_expiring_7d ? ` <span class="pill paused">${a.codes_expiring_7d} expiring</span>` : ""}</td>
+        <td>${a.people_7d}</td><td>${a.replies_7d} / ${a.replies_30d}</td><td>${ago(a.last_activity_at)}</td></tr>`).join("") + "</tbody>";
+    $("#ov-expiring").innerHTML = o.expiring_codes.length
+      ? `<h3>Codes expiring this week</h3><ul class="small" style="margin:6px 0 0;padding-left:18px">` +
+        o.expiring_codes.map((e) => `<li>${esc(e.label || "…" + e.last4)} on /${esc(e.slug)}: ${when(e.expires_at)}</li>`).join("") + "</ul>"
+      : "";
+  }
+  $("#btn-overview").addEventListener("click", () => showOverview().catch(fail));
+  $("#ov-table").addEventListener("click", (e) => { const a = e.target.closest("[data-open]"); if (a) { e.preventDefault(); openAgent(a.dataset.open).catch(fail); } });
 
   // ---------- tabs ----------
   function tab(name) {

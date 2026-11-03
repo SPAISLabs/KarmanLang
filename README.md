@@ -33,9 +33,24 @@ karman CLI ────────┴──────────────
 
 The database tables are created automatically on first use.
 
+## Agents in this repo (source of truth)
+
+`agents/agents.json` lists each agent by slug with its name, settings, and the `.md` file holding its full instructions.
+Change the `.md`, then deploy it:
+
+```bash
+karman check          # which agents changed in the repo but aren't deployed yet
+karman sync nqry      # deploy nqry from agents/agents.json + agents/nqry.md
+karman status         # dashboard: codes, people, replies, last activity, expiring codes
+```
+
+The admin page's **Dashboard** shows the same overview. The KarmanLang Operator (a Claude skill) uses these
+connector tools to do all of this from chat, and a weekly check-in reports drift, expiring codes and usage.
+
 ## Connector tools (MCP)
 
-`list_agents`, `deploy_agent`, `update_agent`, `describe_agent`, `create_code`, `list_codes`, `revoke_code`, `get_usage`.
+`overview`, `list_agents`, `deploy_agent`, `update_agent`, `describe_agent`, `create_code`, `list_codes`, `revoke_code`, `get_usage`.
+`overview`, `describe_agent` and `deploy_agent` return `instructions_sha256` so the deployed prompt can be compared with the repo file.
 
 ## CLI
 
@@ -60,7 +75,7 @@ npx wrangler dev          # uses a local D1 database
 ```
 Put `ADMIN_PASSWORD` and `ANTHROPIC_API_KEY` in `.dev.vars` (git-ignored).
 
-## Known limits (v0.2)
+## Known limits (v0.3)
 
 - Claude models only.
 - Plain chat UI. Agent-specific interfaces (like NQRY's graph board) aren't supported yet.

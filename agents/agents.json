@@ -1,0 +1,11 @@
+{
+  "_readme": "Source of truth for deployed agents. Each key is the agent's slug (its web address). 'instructions' is a file in this folder whose full text is the system prompt. Deploy with: karman sync <slug>. Check for undeployed changes with: karman check.",
+  "nqry": {
+    "name": "NQRY Tutor",
+    "instructions": "nqry.md",
+    "description": "Socratic tutor pilot for educators.",
+    "notice": "Educators only. Not for student use.",
+    "model": "claude-sonnet-5-5",
+    "daily_limit": 100
+  }
+}

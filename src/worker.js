@@ -6,7 +6,7 @@
 import {
   HttpError, bad, now, ensureSchema, one, all, run, sha256, sameString, normalizeCode, throttle, recordFail,
   createSession, endSession, adminFromToken, codeFromToken, requireAgent, agentUrls, agentView, deployAgent,
-  createCode, listCodes, revokeCode, statusOf, repliesLast24h, usageSummary, callClaude, uid, randomToken,
+  createCode, listCodes, revokeCode, statusOf, repliesLast24h, usageSummary, callClaude, uid, randomToken, overview,
 } from "./lib.js";
 import { handleMcp } from "./mcp.js";
 
@@ -170,6 +170,7 @@ const ACTIONS = {
     return { ok: true };
   },
   async admin_me(c) { return { admin: await isAdmin(c), origin: c.origin, connector_base: `${c.origin}/mcp` }; },
+  async overview(c) { await requireAdmin(c); return overview(c.env, c.origin); },
   async agents(c) {
     await requireAdmin(c);
     const rows = await all(c.env, `SELECT a.*, (SELECT COUNT(*) FROM codes k WHERE k.agent_id = a.id AND k.revoked_at IS NULL) AS codes

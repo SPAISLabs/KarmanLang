@@ -27,6 +27,7 @@
 
   <div class="console" id="console" hidden>
     <aside class="card" style="padding:14px">
+      <button class="btn block" id="btn-overview" style="margin-bottom:6px">Dashboard</button>
       <div class="row"><span class="eyebrow">Agents</span><span class="spacer"></span><button class="btn" id="btn-new-agent">+ New</button></div>
       <nav class="agentlist" id="agentlist" aria-label="Agents"></nav>
       <hr style="border:0;border-top:1px solid var(--line);width:100%">
@@ -35,6 +36,14 @@
 
     <section class="card" id="pane" aria-live="polite">
       <div id="empty"><h2>Deploy your first agent</h2><p class="muted" style="margin:0">Use <b>+ New</b>, or connect KarmanLang to Claude and say "deploy this agent".</p></div>
+
+      <!-- dashboard -->
+      <div id="overview" hidden style="display:flex;flex-direction:column;gap:14px">
+        <div class="row"><h2>Dashboard</h2><span class="spacer"></span><span class="small muted" id="ov-time"></span></div>
+        <div class="stats" id="ov-stats"></div>
+        <div class="tbl-wrap"><table id="ov-table"></table></div>
+        <div id="ov-expiring"></div>
+      </div>
 
       <!-- connect -->
       <div id="connect" hidden style="display:flex;flex-direction:column;gap:14px">

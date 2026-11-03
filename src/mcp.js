@@ -3,11 +3,11 @@
 // or send "Authorization: Bearer <token>" to /mcp.
 import {
   HttpError, bad, now, one, all, run, sha256, requireAgent, agentUrls, agentView, deployAgent, cleanPatch,
-  createCode, listCodes, revokeCode, statusOf, usageSummary,
+  createCode, listCodes, revokeCode, statusOf, usageSummary, overview,
 } from "./lib.js";
 
 const VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
-const SERVER = { name: "karmanlang", title: "KarmanLang", version: "0.2.0" };
+const SERVER = { name: "karmanlang", title: "KarmanLang", version: "0.3.0" };
 const INSTRUCTIONS = `KarmanLang turns an agent into a private web app. People get in with an access code.
 Typical flow: deploy_agent (name + the agent's full instructions), then create_code once per person.
 Give the person the link and the code (or link_with_code, which signs them in on open).
@@ -27,6 +27,8 @@ const AGENT_PROPS = {
 };
 const SLUG = { slug: str("Agent slug.") };
 const TOOLS = [
+  { name: "overview", title: "Dashboard", description: "Dashboard across all agents: status, version, live/unused/expiring codes, people and replies (7 and 30 days), tokens, last activity, and each agent's instructions_sha256 for comparing with agents/<slug>.md in the repo. Also lists codes expiring within 7 days.",
+    inputSchema: { type: "object", properties: {} }, annotations: { readOnlyHint: true } },
   { name: "list_agents", title: "List agents", description: "List deployed agents with their links.",
     inputSchema: { type: "object", properties: {} }, annotations: { readOnlyHint: true } },
   { name: "deploy_agent", title: "Deploy agent", description: "Create an agent's web app, or update it if the slug exists. Returns the link and admin link.",
@@ -49,19 +51,25 @@ const TOOLS = [
 
 async function runTool(env, origin, name, args = {}) {
   switch (name) {
+    case "overview": return overview(env, origin);
     case "list_agents": {
       const rows = await all(env, "SELECT * FROM agents ORDER BY updated_at DESC");
       return { agents: rows.map((a) => ({ ...agentView(a), ...agentUrls(origin, a.slug) })) };
     }
-    case "deploy_agent": return deployAgent(env, origin, args);
+    case "deploy_agent": {
+      const r = await deployAgent(env, origin, args);
+      const a = await requireAgent(env, r.agent.slug);
+      return { ...r, instructions_sha256: await sha256(a.instructions) };
+    }
     case "update_agent": {
       const a = await requireAgent(env, args.slug);
-      return deployAgent(env, origin, { ...cleanPatch(args), slug: a.slug });
+      const r = await deployAgent(env, origin, { ...cleanPatch(args), slug: a.slug });
+      return { ...r, instructions_sha256: await sha256((await requireAgent(env, a.slug)).instructions) };
     }
     case "describe_agent": {
       const a = await requireAgent(env, args.slug);
       const codes = (await listCodes(env, a)).map((k) => ({ id: k.id, label: k.label, last4: k.hint, status: statusOf(k), replies: k.replies }));
-      return { ...agentView(a), instructions_preview: String(a.instructions).slice(0, 600), ...agentUrls(origin, a.slug), codes };
+      return { ...agentView(a), instructions_sha256: await sha256(a.instructions), instructions_preview: String(a.instructions).slice(0, 600), ...agentUrls(origin, a.slug), codes };
     }
     case "create_code": return createCode(env, origin, await requireAgent(env, args.slug), args);
     case "list_codes": {

@@ -222,3 +222,35 @@ export async function callClaude(env, model, system, messages) {
   if (!text) throw new HttpError(502, "empty", "The model returned an empty reply. Try again.");
   return { text, usage: j.usage ?? {}, latency: now() - t0, stop: j.stop_reason };
 }
+
+// ---------- overview (dashboard across all agents) ----------
+// instructions_sha256 lets an operator compare the deployed prompt with agents/<slug>.md in the repo.
+export async function overview(env, origin) {
+  const t = now(), week = t - 7 * DAY, month = t - 30 * DAY, soon = t + 7 * DAY;
+  const rows = await all(env, `SELECT a.*,
+      (SELECT COUNT(*) FROM codes k WHERE k.agent_id = a.id AND k.revoked_at IS NULL AND (k.expires_at IS NULL OR k.expires_at > ?)) AS codes_live,
+      (SELECT COUNT(*) FROM codes k WHERE k.agent_id = a.id AND k.revoked_at IS NULL AND (k.expires_at IS NULL OR k.expires_at > ?) AND k.first_used_at IS NULL) AS codes_unused,
+      (SELECT COUNT(*) FROM codes k WHERE k.agent_id = a.id AND k.revoked_at IS NULL AND k.expires_at > ? AND k.expires_at <= ?) AS codes_expiring_7d,
+      (SELECT COUNT(DISTINCT m.code_id) FROM messages m WHERE m.agent_id = a.id AND m.role = 'assistant' AND m.created_at > ? AND m.code_id IS NOT NULL) AS people_7d,
+      (SELECT COUNT(*) FROM messages m WHERE m.agent_id = a.id AND m.role = 'assistant' AND m.created_at > ?) AS replies_7d,
+      (SELECT COUNT(*) FROM messages m WHERE m.agent_id = a.id AND m.role = 'assistant' AND m.created_at > ?) AS replies_30d,
+      (SELECT COALESCE(SUM(m.input_tokens), 0) + COALESCE(SUM(m.output_tokens), 0) FROM messages m WHERE m.agent_id = a.id AND m.role = 'assistant' AND m.created_at > ?) AS tokens_30d,
+      (SELECT MAX(m.created_at) FROM messages m WHERE m.agent_id = a.id) AS last_activity_at
+    FROM agents a ORDER BY a.updated_at DESC`, t, t, t, soon, week, week, month, month);
+  const agents = await Promise.all(rows.map(async (a) => ({
+    slug: a.slug, name: a.name, status: a.status, version: a.version, model: a.model, updated_at: a.updated_at,
+    instructions_sha256: await sha256(a.instructions),
+    codes_live: a.codes_live, codes_unused: a.codes_unused, codes_expiring_7d: a.codes_expiring_7d,
+    people_7d: a.people_7d, replies_7d: a.replies_7d, replies_30d: a.replies_30d, tokens_30d: a.tokens_30d,
+    last_activity_at: a.last_activity_at, ...agentUrls(origin, a.slug),
+  })));
+  const expiring = await all(env, `SELECT a.slug, k.label, k.hint, k.expires_at FROM codes k JOIN agents a ON a.id = k.agent_id
+    WHERE k.revoked_at IS NULL AND k.expires_at > ? AND k.expires_at <= ? ORDER BY k.expires_at`, t, soon);
+  const sum = (k) => agents.reduce((n, a) => n + (a[k] || 0), 0);
+  return {
+    generated_at: t, admin_url: `${origin}/admin`,
+    totals: { agents: agents.length, active: agents.filter((a) => a.status === "active").length, codes_live: sum("codes_live"),
+      replies_7d: sum("replies_7d"), replies_30d: sum("replies_30d"), tokens_30d: sum("tokens_30d") },
+    agents, expiring_codes: expiring.map((e) => ({ slug: e.slug, label: e.label, last4: e.hint, expires_at: e.expires_at })),
+  };
+}
